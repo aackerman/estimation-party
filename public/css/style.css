@@ -1,0 +1,36 @@
+.estimates {
+  margin-top: 71px;
+  height: 200px;
+  display: -webkit-flex;
+  display: -moz-flex;
+  display: flex;
+  -webkit-align-items: flex-end;
+  -moz-align-items: flex-end;
+  align-items: flex-end;
+}
+
+.estimate {
+  position: relative;
+  background: #EFEFEF;
+  border: 1px solid #CCC;
+  -webkit-flex: 1;
+  -moz-flex: 1;
+  flex: 1;
+  margin: 0 10px;
+  height: 30px;
+}
+
+.estimate::after {
+  content: attr(data-value);
+  position: absolute;
+  bottom: -20px;
+  left: 45%;
+}
+
+.estimate:first-child {
+  margin-left: 0;
+}
+
+.estimate:last-child {
+  margin-right: 0;
+}
