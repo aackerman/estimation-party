@@ -6,14 +6,19 @@ define(
   function(
     $
   ) {
-    function route(e) {
-      console.log(e);
-    }
 
     var ws = new WebSocket("ws://localhost:8000/ws");
-    ws.onclose = route;
-    ws.onerror = route;
-    ws.onmessage = route;
+    ws.onclose = function(e) {
+      console.log(e);
+    };
+    ws.onerror = function(e) {
+      console.log(e);
+    };
+    ws.onmessage = function(e) {
+      var data = JSON.parse(e.data);
+      console.log(e)
+      socket.emit(data.route);
+    };
 
     var pubsub = $({});
 
@@ -28,6 +33,9 @@ define(
       },
       off: function() {
         pubsub.off.apply(pubsub, arguments);
+      },
+      emit: function() {
+        pubsub.trigger.apply(pubsub, arguments);
       }
     };
 

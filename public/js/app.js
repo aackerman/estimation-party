@@ -1,7 +1,8 @@
 define(
   [
     "jquery",
-    "socket"
+    "socket",
+    "messaging"
   ],
 
   function(
@@ -13,6 +14,16 @@ define(
       var $el = $(e.target);
       socket.send('vote', { points: $el.data('value').toFixed(1).toString() });
       $('.estimate').off('click');
+    });
+
+    $('.start-voting').on('click', function() {
+      socket.send('start', { ticket: $('#ticket').val() })
+    });
+
+    $('.controls').show();
+
+    socket.on('start', function(data){
+      messaging.ticket(data.ticket)
     });
   }
 );

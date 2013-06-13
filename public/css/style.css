@@ -1,36 +1,77 @@
+body {
+  margin: 0;
+  padding: 20px;
+  font-family: Helvetica Nueue, Arial;
+  background: url(/img/background.jpg)
+}
+
+h1 {
+  margin: 0;
+}
+
+.ticket-name {
+  font-size: 2rem;
+  text-align: center;
+}
+
 .estimates {
-  margin-top: 71px;
   height: 200px;
+  margin: 0 auto 20px;
   display: -webkit-flex;
   display: -moz-flex;
   display: flex;
   -webkit-align-items: flex-end;
-  -moz-align-items: flex-end;
-  align-items: flex-end;
+}
+
+.app-container {
+  width: 80%;
+  margin: 0 auto;
 }
 
 .estimate {
-  position: relative;
-  background: #EFEFEF;
-  border: 1px solid #CCC;
+  box-sizing: border-box;
   -webkit-flex: 1;
   -moz-flex: 1;
   flex: 1;
-  margin: 0 10px;
+  margin: 0 1%;
   height: 30px;
+  background: #EFEFEF;
+  border: 1px solid #CCC;
+  position: relative;
+  transition: height 500ms;
+}
+
+.estimate.voted {
+  background: #0088cc;
+  color: #FFF;
+}
+
+.estimate.voted.winner {
+  background: #C80000;
 }
 
 .estimate::after {
   content: attr(data-value);
   position: absolute;
-  bottom: -20px;
-  left: 45%;
+  bottom: 0;
+  left: 42%;
 }
 
-.estimate:first-child {
-  margin-left: 0;
+.notifications {
+  font-size: 1.5 rem;
+  text-align: center;
+  margin: 10px auto;
 }
 
-.estimate:last-child {
-  margin-right: 0;
+.controls {
+  margin: 0 auto;
+  display: none;
+  text-align: center;
+}
+
+.messaging {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  font-size: 1rem;
 }
