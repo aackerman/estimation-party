@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	// "sockpuppet"
+	"encoding/json"
 	"strings"
 	"text/template"
 )
@@ -20,19 +21,33 @@ func index(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+type Results struct {
+	values map[float32]int
+}
+
+type Vote struct {
+	Points float32 `json:",string"`
+}
+
+var results = Results{make(map[float32]int)}
+
 func main() {
 	flag.Parse()
 
 	// setup index handler
 	http.HandleFunc("/", index)
 
-	IO := Listen()
+	// listen for websocket
+	SockPuppet := Listen()
 
-	IO.Sockets(func(s *socket) {
+	// setup websocket routing
+	SockPuppet.Routing(func(s *socket) {
+		var v Vote
 
-		s.On("hello", func(msg map[string]string) {
-			s.Send(msg)
-			log.Println("echo", msg)
+		s.On("vote", func(data *json.RawMessage) {
+			json.Unmarshal(*data, &v)
+			results.values[v.Points] += 1
+			log.Println(results)
 		})
 
 	})
@@ -40,6 +55,7 @@ func main() {
 	// server static files
 	mux.Handle("/", http.FileServer(http.Dir("/Users/aackerman/www/estimation-party/public")))
 
+	// set http server to listen
 	if err := http.ListenAndServe(":8000", nil); err != nil {
 		log.Fatal("ListenAndServe:", err)
 	}

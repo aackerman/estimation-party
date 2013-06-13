@@ -5,7 +5,7 @@ define(
 
   function(
     $
-  ){
+  ) {
     function route(e) {
       console.log(e);
     }
@@ -18,8 +18,10 @@ define(
     var pubsub = $({});
 
     var socket = {
-      send: function(str) {
-        ws.send(str);
+      send: function(route, data) {
+        var json = JSON.stringify({route: route, data: data})
+        console.log('json sent', json);
+        ws.send(json);
       },
       on: function() {
         pubsub.on.apply(pubsub, arguments);
@@ -28,11 +30,6 @@ define(
         pubsub.off.apply(pubsub, arguments);
       }
     };
-
-    ws.onopen = function() {
-      console.log('onopen')
-      ws.send(JSON.stringify({route: 'hello', msg: 'world'}));
-    }
 
     return socket;
   }
