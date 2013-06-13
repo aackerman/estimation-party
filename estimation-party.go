@@ -22,14 +22,27 @@ func index(w http.ResponseWriter, r *http.Request) {
 }
 
 type Results struct {
-	values map[float32]int
+	Values map[float32]int
 }
 
 type Vote struct {
 	Points float32 `json:",string"`
 }
 
-var results = Results{make(map[float32]int)}
+type Voter struct {
+	Socket *socket
+	Vote   Vote
+}
+
+type State struct {
+	Voters  []*Voter
+	Results Results
+}
+
+var state = &State{
+	Voters:  make([]*Voter, 10),
+	Results: Results{make(map[float32]int)},
+}
 
 func main() {
 	flag.Parse()
@@ -42,12 +55,18 @@ func main() {
 
 	// setup websocket routing
 	SockPuppet.Routing(func(s *socket) {
-		var v Vote
+		var vote Vote
+
+		voter := &Voter{
+			Socket: s,
+			Vote:   vote,
+		}
+
+		state.Voters = append(state.Voters, voter)
 
 		s.On("vote", func(data *json.RawMessage) {
-			json.Unmarshal(*data, &v)
-			results.values[v.Points] += 1
-			log.Println(results)
+			json.Unmarshal(*data, &vote)
+			state.Results.Values[vote.Points] += 1
 		})
 
 	})
