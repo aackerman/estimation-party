@@ -1,11 +1,11 @@
 package main
 
 import (
+	"code.google.com/p/go.net/websocket"
+	"encoding/json"
 	"flag"
 	"log"
 	"net/http"
-	// "sockpuppet"
-	"encoding/json"
 	"strings"
 	"text/template"
 )
@@ -30,8 +30,7 @@ type Vote struct {
 }
 
 type Voter struct {
-	Socket *socket
-	Vote   Vote
+	Vote Vote
 }
 
 type State struct {
@@ -44,6 +43,49 @@ var state = &State{
 	Results: Results{make(map[float32]int)},
 }
 
+func Connect(ws *websocket.Conn) {
+	log.Println("socket connection established")
+	defer ws.Close()
+
+	var msg map[string]*json.RawMessage
+	for {
+		if err := websocket.JSON.Receive(ws, &msg); err != nil {
+			log.Println("receive error", err)
+			break
+		}
+		Route(msg)
+	}
+
+	log.Println("socket disconnected")
+}
+
+func Send(ws *websocket.Conn, msg map[string]string) {
+	if err := websocket.JSON.Send(ws, &msg); err != nil {
+		log.Println("send err", err)
+	}
+}
+
+func Route(msg map[string]*json.RawMessage) {
+	var route string
+	json.Unmarshal(*msg["route"], &route)
+	switch route {
+	case "vote":
+		var vote Vote
+		json.Unmarshal(*msg["data"], &vote)
+		CastVote(vote)
+	case "start"
+		StartVoting()
+	}
+}
+
+func CastVote(v Vote) {
+	log.Println(v)
+}
+
+func StartVoting() {
+
+}
+
 func main() {
 	flag.Parse()
 
@@ -51,25 +93,7 @@ func main() {
 	http.HandleFunc("/", index)
 
 	// listen for websocket
-	SockPuppet := Listen()
-
-	// setup websocket routing
-	SockPuppet.Routing(func(s *socket) {
-		var vote Vote
-
-		voter := &Voter{
-			Socket: s,
-			Vote:   vote,
-		}
-
-		state.Voters = append(state.Voters, voter)
-
-		s.On("vote", func(data *json.RawMessage) {
-			json.Unmarshal(*data, &vote)
-			state.Results.Values[vote.Points] += 1
-		})
-
-	})
+	http.Handle("/ws", websocket.Handler(Connect))
 
 	// server static files
 	mux.Handle("/", http.FileServer(http.Dir("/Users/aackerman/www/estimation-party/public")))
