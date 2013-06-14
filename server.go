@@ -27,7 +27,7 @@ func main() {
 	// setup index handler
 	http.HandleFunc("/", index)
 
-	// listen for websocket
+	// listen for websockets
 	http.Handle("/ws", websocket.Handler(Connect))
 
 	dirs := []string{os.Getenv("HOME"), "/www/estimation-party/public"}

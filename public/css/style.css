@@ -11,12 +11,29 @@ h1 {
   text-align: center;
 }
 
-.estimates {
-  height: 200px;
-  margin: 0 auto 20px;
+.flex-row {
   display: -webkit-flex;
   display: -moz-flex;
   display: flex;
+}
+
+.flex-row > div {
+  -webkit-flex: 1;
+  -moz-flex: 1;
+  flex: 1;
+}
+
+.estimate-value {
+  box-sizing: border-box;
+  margin: 5px 1% 20px;
+  text-align: center;
+  border: 1px solid transparent;
+  position: relative;
+}
+
+.estimates {
+  height: 200px;
+  margin: 0 auto;
   -webkit-align-items: flex-end;
 }
 
@@ -27,9 +44,6 @@ h1 {
 
 .estimate {
   box-sizing: border-box;
-  -webkit-flex: 1;
-  -moz-flex: 1;
-  flex: 1;
   margin: 0 1%;
   height: 30px;
   background: #EFEFEF;
@@ -45,13 +59,6 @@ h1 {
 
 .estimate.voted.winner {
   background: #C80000;
-}
-
-.estimate::after {
-  content: attr(data-value);
-  position: absolute;
-  bottom: 0;
-  left: 42%;
 }
 
 .notifications {
