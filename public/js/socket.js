@@ -9,33 +9,34 @@ define(
 
     var ws = new WebSocket("ws://localhost:8000/ws");
     ws.onclose = function(e) {
-      console.log(e);
+      console.log("WebSocket closed", e);
     };
     ws.onerror = function(e) {
-      console.log(e);
+      console.log("WebSocket error", e);
     };
     ws.onmessage = function(e) {
       var data = JSON.parse(e.data);
-      console.log(e)
-      socket.emit(data.route);
+      socket.route(data.route, data.data);
     };
 
     var pubsub = $({});
 
     var socket = {
-      send: function(route, data) {
-        var json = JSON.stringify({route: route, data: data})
-        console.log('json sent', json);
-        ws.send(json);
+      __callbacks: {},
+      emit: function(route, data) {
+        ws.send(JSON.stringify({route: route, data: data}));
       },
-      on: function() {
-        pubsub.on.apply(pubsub, arguments);
+      on: function(r, fn) {
+        socket.__callbacks[r] = fn
       },
-      off: function() {
-        pubsub.off.apply(pubsub, arguments);
-      },
-      emit: function() {
-        pubsub.trigger.apply(pubsub, arguments);
+      route: function() {
+        var args = [].slice.call(arguments);
+        var route = args.shift()
+        if (socket.__callbacks[route]) {
+          socket.__callbacks[route].apply(null, args);
+        } else {
+          console.error("ROUTE DOES NOT EXIST", route)
+        }
       }
     };
 

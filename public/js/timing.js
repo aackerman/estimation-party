@@ -13,11 +13,10 @@ define(
       total: 20,
       start: function(time) {
         var $el = $('.progress .bar');
-        $el.css({ width: "100%" });
-        var t = (time || timing.total) * 1e3
+        $el.css({ width: "100" });
         $el
           .addClass('active')
-          .animate({ width: "0" }, t, 'linear');
+          .animate({ width: "0px" }, timing.total * 1e3, 'linear');
       },
       end: function() {
         $('.progress .bar').css({ width: 0 }).stop();
