@@ -2,10 +2,9 @@ package main
 
 import (
 	"code.google.com/p/go.net/websocket"
-	_ "encoding/json"
+	"encoding/json"
 	"io"
 	"log"
-	"math/rand"
 	"strconv"
 	"time"
 )
@@ -23,12 +22,12 @@ type Vote struct {
 }
 
 type Voter struct {
-	ws       *websocket.Conn
-	id       int
-	Vote     Vote
-	receive  chan Msg
-	response chan Msg
-	quit     chan bool
+	ws           *websocket.Conn
+	Voted        bool
+	receive      chan Msg
+	msgresponse  chan Msg
+	byteresponse chan []byte
+	quit         chan bool
 }
 
 type Msg struct {
@@ -44,8 +43,13 @@ var party = &EstimationParty{
 func (v *Voter) Send() {
 	for {
 		select {
-		case msg := <-v.response:
+		case msg := <-v.msgresponse:
 			if err := websocket.JSON.Send(v.ws, &msg); err != nil {
+				log.Println("send err", err)
+				break
+			}
+		case data := <-v.byteresponse:
+			if err := websocket.JSON.Send(v.ws, &data); err != nil {
 				log.Println("send err", err)
 				break
 			}
@@ -55,9 +59,6 @@ func (v *Voter) Send() {
 
 func (v *Voter) Receive() {
 	var msg Msg
-	var route string
-	var vote Vote
-	var points float64
 
 	for {
 		if err := websocket.JSON.Receive(v.ws, &msg); err != nil {
@@ -68,11 +69,12 @@ func (v *Voter) Receive() {
 			return
 		}
 
-		switch route {
+		switch msg.Route {
 		case "vote":
-			points = strconv.ParseFloat(msg.Data["points"], 64)
-			vote = &Vote{points}
-			if party.Voting == true {
+			var vote Vote
+			points, _ := strconv.ParseFloat(msg.Data["points"], 64)
+			vote = Vote{points}
+			if party.Voting == true && v.Voted == false {
 				party.CastVote(v, vote)
 			}
 		case "start":
@@ -80,6 +82,7 @@ func (v *Voter) Receive() {
 			go party.StartVoting()
 		// case "sync":
 		default:
+			log.Println("unknown route", msg.Route)
 			v.quit <- true
 			return
 		}
@@ -88,7 +91,7 @@ func (v *Voter) Receive() {
 
 func (party *EstimationParty) CastVote(voter *Voter, vote Vote) {
 	party.Results[vote.Points] += 1
-	voter.Vote = vote
+	voter.Voted = true
 }
 
 func (party *EstimationParty) RemoveVoter(v *Voter) {
@@ -96,13 +99,44 @@ func (party *EstimationParty) RemoveVoter(v *Voter) {
 	party.Voters = append(party.Voters[:i], party.Voters[i+1:]...)
 }
 
+func (party *EstimationParty) CheckVoting() {
+	votes := 0
+	for _, voter := range party.Voters {
+		if voter.Voted == true {
+			votes += 1
+		}
+	}
+	if votes >= len(party.Voters) {
+		party.done <- true
+	}
+}
+
+func (party *EstimationParty) ResetVotes() {
+	for _, voter := range party.Voters {
+		voter.Voted = false
+	}
+}
+
+func (party *EstimationParty) SendResults() {
+	for _, voter := range party.Voters {
+		if voter != nil {
+			marshaled, err := json.Marshal(party.Results)
+			if err != nil {
+				log.Println("json error")
+			}
+			voter.byteresponse <- marshaled
+		}
+	}
+}
+
 func (party *EstimationParty) MakeVoter(ws *websocket.Conn) Voter {
 	return Voter{
-		ws:       ws,
-		id:       rand.Int(),
-		response: make(chan Msg),
-		receive:  make(chan Msg),
-		quit:     make(chan bool),
+		ws:           ws,
+		Voted:        false,
+		msgresponse:  make(chan Msg),
+		byteresponse: make(chan []byte),
+		receive:      make(chan Msg),
+		quit:         make(chan bool),
 	}
 }
 
@@ -120,7 +154,7 @@ func (party *EstimationParty) StartVoting() {
 
 	for _, voter := range party.Voters {
 		if voter != nil {
-			voter.response <- Msg{
+			voter.msgresponse <- Msg{
 				Route: "start",
 				Data:  map[string]string{"ticket": party.Ticket, "voting": "true"},
 			}
@@ -131,8 +165,12 @@ func (party *EstimationParty) StartVoting() {
 		select {
 		case <-party.done:
 			party.Voting = false
+			party.SendResults()
+			break
 		case <-time.After(20 * time.Second):
 			party.Voting = false
+			party.SendResults()
+			break
 		}
 	}
 }
