@@ -11,15 +11,10 @@ type Vote struct {
 }
 
 type Voter struct {
-	ws    *websocket.Conn
-	Voted bool
-	quit  chan bool
-}
-
-func (v *Voter) SendMsg(msg Msg) {
-	if err := websocket.JSON.Send(v.ws, &msg); err != nil {
-		log.Println("send err", err)
-	}
+	ws      *websocket.Conn
+	Voted   bool
+	CanVote bool
+	quit    chan bool
 }
 
 func (v *Voter) Receive() {
@@ -38,7 +33,7 @@ func (v *Voter) Receive() {
 		case "vote":
 			var vote Vote
 			vote = Vote{msg.Data["points"]}
-			if party.Voting == true && v.Voted == false {
+			if party.Voting == true && v.Voted == false && v.CanVote {
 				party.CastVote(v, vote)
 				party.CheckVoting()
 			}

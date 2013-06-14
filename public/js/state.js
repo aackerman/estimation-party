@@ -18,6 +18,7 @@ define(
       reset: function(){
         this.__attrs = _.cloneDeep(this.__default);
         $('.estimate').height('30px');
+        $('.estimate').removeClass('voted').removeClass('winner')
       }
     };
   }

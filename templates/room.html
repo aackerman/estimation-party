@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="/css/bootstrap-responsive.min.css" />
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <div class="navbar navbar-inverse">
+    <div class="navbar-inner">
+      <a class="brand" href="/">Estimation Party</a>
+    </div>
+  </div>
+  <ul class="messaging">
+    <li class="voting">
+    <li class="ticket">
+    <li class="timing">
+  </ul>
+  <div class="app-container">
+    <div class="estimates flex-row">
+      <div class="estimate" data-value="0.0"></div>
+      <div class="estimate" data-value="0.5"></div>
+      <div class="estimate" data-value="1.0"></div>
+      <div class="estimate" data-value="2.0"></div>
+      <div class="estimate" data-value="3.0"></div>
+      <div class="estimate" data-value="5.0"></div>
+      <div class="estimate" data-value="8.0"></div>
+      <div class="estimate" data-value="13.0"></div>
+    </div>
+    <div class="flex-row">
+      <div class="estimate-value">0.0</div>
+      <div class="estimate-value">0.5</div>
+      <div class="estimate-value">1.0</div>
+      <div class="estimate-value">2.0</div>
+      <div class="estimate-value">3.0</div>
+      <div class="estimate-value">5.0</div>
+      <div class="estimate-value">8.0</div>
+      <div class="estimate-value">13.0</div>
+    </div>
+    <div class="progress progress-striped">
+      <div class="bar"></div>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="input-append input-prepend">
+      <span class="add-on">OF-</span>
+      <input type="text" name="ticket" id="ticket" class="span2" placeholder="ticket" />
+      <button class="btn start-voting" type="button">Start Voting!</button>
+    </div>
+  </div>
+  <script src="/js/require.js" data-main="/js/app.js"></script>
+</body>
+</html>

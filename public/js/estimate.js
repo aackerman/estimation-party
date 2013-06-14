@@ -9,7 +9,9 @@ define(
 
   function($, _, s, messaging, state) {
     function winner(data) {
-      return _.max(_.values(data));
+      var max = -1, top;
+      _.forEach(data, function(v, k){if (v > max) top = k});
+      return top
     }
 
     return {
@@ -27,12 +29,15 @@ define(
       },
       results: function(data){
         var points, height;
+        var top = winner(data);
+        console.log(top)
         $('.estimate').removeClass('voted')
         $('.estimate').each(function(i, el) {
           $el = $(el);
           points = $el.data('value');
           height = data[points] * 10 + 30;
-          if (points == winner(data)) $el.addClass('winner');
+          console.log(points, top, points == top)
+          if (points == top) $el.addClass('winner');
           $el.height(height + 'px');
         });
       }

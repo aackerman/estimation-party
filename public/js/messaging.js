@@ -13,8 +13,11 @@ define(
         $('.notifications').text(msg);
       },
       ticket: function(t) {
-        console.log('set ticket', t);
-        $('.ticket').text(t);
+        if (/[0-9]{4}/.test(t)) {
+          $('.ticket').html("<a href='http://jira/browse/OF-" + t + "' target='_blank'>" + t + "</a>");
+        } else  {
+          $('.ticket').text(t);
+        }
       }
     };
 

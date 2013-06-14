@@ -10,7 +10,7 @@ define(
   ) {
 
     var timing = {
-      total: 20,
+      total: 300,
       start: function(time) {
         var $el = $('.progress .bar');
         $el.css({ width: "100%" });
