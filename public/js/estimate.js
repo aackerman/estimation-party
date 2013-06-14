@@ -8,12 +8,8 @@ define(
   ],
 
   function($, _, s, messaging, state) {
-    function winner(results) {
-      var maxvotes = 0, points;
-      _.each(results, function(votes, value) {
-        if (votes > maxvotes) points = value;
-      });
-      return points;
+    function winner(data) {
+      return _.max(_.values(data));
     }
 
     return {
@@ -31,16 +27,13 @@ define(
       },
       results: function(data){
         var points, height;
-        var max = _.max(data, function(r){ return r.points });
-        console.log(max)
-
+        $('.estimate').removeClass('voted')
         $('.estimate').each(function(i, el) {
           $el = $(el);
           points = $el.data('value');
-          height = data[points] * 20;
+          height = data[points] * 10 + 30;
           if (points == winner(data)) $el.addClass('winner');
-          if (height) $el.addClass('voted');
-          $el.height(height + 50 + 'px');
+          $el.height(height + 'px');
         });
       }
     };

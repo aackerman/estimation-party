@@ -35,7 +35,7 @@ define(
         if (socket.__callbacks[route]) {
           socket.__callbacks[route].apply(null, args);
         } else {
-          console.error("ROUTE DOES NOT EXIST", route)
+          console.log("ROUTE DOES NOT EXIST", route)
         }
       }
     };

@@ -36,6 +36,7 @@ func (party *EstimationParty) CastVote(voter *Voter, vote Vote) {
 
 func (party *EstimationParty) RemoveVoter(v *Voter) {
 	i := party.FindVoter(v)
+	// TODO: figure out why this works https://code.google.com/p/go-wiki/wiki/SliceTricks
 	party.Voters = append(party.Voters[:i], party.Voters[i+1:]...)
 }
 
@@ -66,6 +67,7 @@ func (party *EstimationParty) SendResults() {
 		}
 	}
 	party.Reset()
+	log.Println("Reset Party, waiting to start estimating again")
 }
 
 func (party *EstimationParty) MakeVoter(ws *websocket.Conn) Voter {

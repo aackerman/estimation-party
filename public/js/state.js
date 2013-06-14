@@ -17,7 +17,7 @@ define(
       },
       reset: function(){
         this.__attrs = _.cloneDeep(this.__default);
-        $('.estimate').height('50px');
+        $('.estimate').height('30px');
       }
     };
   }
