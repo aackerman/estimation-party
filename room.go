@@ -18,14 +18,14 @@ type Room struct {
 	done    chan bool
 }
 
-func CreateRoom() Room {
+func CreateRoom() *Room {
 	uuid, err := guid.Generate()
 
 	if err != nil {
 		log.Println("error creating guid", err)
 	}
 
-	return Room{
+	room := &Room{
 		Guid:    uuid,
 		Voters:  make(map[*Voter]bool, 10),
 		Results: Msg{Route: "results", Data: make(map[string]string)},
@@ -33,9 +33,11 @@ func CreateRoom() Room {
 		Ticket:  "",
 		done:    make(chan bool),
 	}
-}
 
-var party = &EstimationParty{}
+	EstimationParty.Rooms[room] = true
+
+	return room
+}
 
 func (r *Room) CastVote(voter *Voter, vote Vote) {
 	// handle string <-> int conversion

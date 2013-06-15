@@ -10,14 +10,15 @@ import (
 	"text/template"
 )
 
-var tpl = template.Must(template.ParseFiles("public/index.html"))
+var indextpl = template.Must(template.ParseFiles("views/layout.html", "views/index.html"))
+var roomtpl = template.Must(template.ParseFiles("views/layout.html", "views/room.html"))
 var mux = http.NewServeMux()
 
 func index(w http.ResponseWriter, r *http.Request) {
 	if strings.Contains(r.URL.Path, ".") {
 		mux.ServeHTTP(w, r)
 	} else {
-		tpl.Execute(w, r.Host)
+		indextpl.Execute(w, r.URL.Host)
 	}
 }
 
@@ -25,9 +26,11 @@ func roomHandler(w http.ResponseWriter, r *http.Request) {
 	subpath := r.URL.Path[6:]
 	switch subpath {
 	case "new":
-		// create room and redirect user to the room
+		room := CreateRoom()
+		url := "/room/" + room.Guid
+		http.Redirect(w, r, url, 302)
 	case ExistingRoom(subpath):
-		// respond with the template for the room
+		roomtpl.Execute(w, "")
 	default:
 		// room does not exist, redirect to 404
 	}
@@ -38,8 +41,13 @@ func ExistingRoom(name string) string {
 	// check if the room is in map of existing rooms
 }
 
-func FindRoom(ws *websocket.Conn) Room {
-	return Room{}
+func FindRoom(guid string) *Room {
+	for room, _ := range EstimationParty.Rooms {
+		if room.Guid == guid {
+			return room
+		}
+	}
+	return &Room{}
 }
 
 func WebsocketConnect(ws *websocket.Conn) {

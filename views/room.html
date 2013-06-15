@@ -1,20 +1,8 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <link rel="stylesheet" href="/css/bootstrap.min.css" />
-  <link rel="stylesheet" href="/css/bootstrap-responsive.min.css" />
-  <link rel="stylesheet" href="/css/style.css" />
-</head>
-<body>
-  <div class="navbar navbar-inverse">
-    <div class="navbar-inner">
-      <a class="brand" href="/">Estimation Party</a>
-    </div>
-  </div>
+{{define "content"}}
   <ul class="messaging">
     <li class="voting">
     <li class="ticket">
-    <li class="timing">
+    <li class="name">{{.Guid}}
   </ul>
   <div class="app-container">
     <div class="estimates flex-row">
@@ -49,5 +37,5 @@
     </div>
   </div>
   <script src="/js/require.js" data-main="/js/app.js"></script>
-</body>
-</html>
+{{end}}
+
