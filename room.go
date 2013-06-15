@@ -3,21 +3,11 @@ package main
 import (
 	"code.google.com/p/go.net/websocket"
 	"github.com/aackerman/guid"
+	"io"
 	"log"
 	"strconv"
 	"time"
 )
-
-type Msg struct {
-	Route string            `json:"route"`
-	Data  map[string]string `json:"data"`
-}
-
-func (m *Msg) Send(ws *websocket.Conn) {
-	if err := websocket.JSON.Send(ws, &m); err != nil {
-		log.Println("send err", err)
-	}
-}
 
 type Room struct {
 	Guid    string
@@ -121,6 +111,35 @@ func (r *Room) StartVoting() {
 			r.Voting = false
 			r.SendResults()
 			return
+		}
+	}
+}
+
+func (r *Room) Receive(v *Voter) {
+	var msg Msg
+
+	for {
+		if err := websocket.JSON.Receive(v.ws, &msg); err != nil {
+			if err != io.EOF {
+				log.Println("websocket receive error", err)
+			}
+			v.quit <- true
+			return
+		}
+
+		switch msg.Route {
+		case "vote":
+			var vote Vote
+			vote = Vote{msg.Data["points"]}
+			if r.Voting == true && v.Voted == false && v.CanVote {
+				r.CastVote(v, vote)
+				r.CheckVoting()
+			}
+		case "start":
+			r.Ticket = msg.Data["ticket"]
+			go r.StartVoting()
+		default:
+			log.Println("unknown route", msg.Route)
 		}
 	}
 }
