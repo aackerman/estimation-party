@@ -14,3 +14,12 @@ type Voter struct {
 	CanVote bool
 	quit    chan bool
 }
+
+func MakeVoter(ws *websocket.Conn) *Voter {
+	return &Voter{
+		ws:      ws,
+		Voted:   false,
+		CanVote: false,
+		quit:    make(chan bool),
+	}
+}

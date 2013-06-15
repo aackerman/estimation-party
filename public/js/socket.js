@@ -6,8 +6,8 @@ define(
   function(
     $
   ) {
-
-    var ws = new WebSocket("ws://localhost:8000/ws");
+    var room = window.location.pathname.replace('\/room\/', '')
+    var ws = new WebSocket("ws://localhost:8000/ws/" + room);
     ws.onclose = function(e) {
       console.log("WebSocket closed", e);
     };

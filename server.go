@@ -24,64 +24,40 @@ func index(w http.ResponseWriter, r *http.Request) {
 
 func roomHandler(w http.ResponseWriter, r *http.Request) {
 	subpath := r.URL.Path[6:]
-	switch subpath {
-	case "new":
+
+	if subpath == "new" {
 		room := CreateRoom()
 		url := "/room/" + room.Guid
 		http.Redirect(w, r, url, 302)
-	case ExistingRoom(subpath):
-		roomtpl.Execute(w, "")
-	default:
-		// room does not exist, redirect to 404
+		return
 	}
-}
 
-func ExistingRoom(name string) string {
-	return name
-	// check if the room is in map of existing rooms
-}
+	room, err := FindRoomByGuid(subpath)
 
-func FindRoomByGuid(guid string) *Room {
-	for room, _ := range EstimationParty.Rooms {
-		if room.Guid == guid {
-			return room
-		}
+	if err != nil {
+		http.Redirect(w, r, "/", 404)
+		return
 	}
-	return &Room{
-		Voters: make(map[*Voter]bool),
-		Results: Msg{
-			Route: "results",
-			Data:  make(map[string]string),
-		},
-		done: make(chan bool),
-	}
-}
 
-func FindRoomBySocket(ws *websocket.Conn) *Room {
-	return &Room{
-		Voters: make(map[*Voter]bool),
-		Results: Msg{
-			Route: "results",
-			Data:  make(map[string]string),
-		},
-		done: make(chan bool),
-	}
+	roomtpl.Execute(w, room)
 }
 
 func WebsocketConnect(ws *websocket.Conn) {
-	log.Println("socket connected")
 	defer ws.Close()
 
-	room := FindRoomBySocket(ws)
+	voter := MakeVoter(ws)
 
-	// make a new voter
-	voter := room.MakeVoter(ws)
-	room.Voters[voter] = true
+	guid := ws.Request().URL.Path[4:]
+	room, err := FindRoomByGuid(guid)
 
-	go room.Receive(voter)
+	if err != nil {
+		log.Fatal("Room does not exist")
+	}
+
+	go room.Listen(voter)
+
 	<-voter.quit
 	delete(room.Voters, voter)
-	log.Println("socket disconnected")
 }
 
 func main() {
@@ -93,7 +69,7 @@ func main() {
 	http.HandleFunc("/room/", roomHandler)
 
 	// listen for websockets
-	http.Handle("/ws", websocket.Handler(WebsocketConnect))
+	http.Handle("/ws/", websocket.Handler(WebsocketConnect))
 
 	dirs := []string{os.Getenv("HOME"), "/www/estimation-party/public"}
 	dir := strings.Join(dirs, "")
