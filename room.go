@@ -1,135 +1,131 @@
+package main
+
+import (
+	"code.google.com/p/go.net/websocket"
+	"github.com/aackerman/guid"
+	"log"
+	"strconv"
+	"time"
+)
+
 type Msg struct {
-  Route string            `json:"route"`
-  Data  map[string]string `json:"data"`
+	Route string            `json:"route"`
+	Data  map[string]string `json:"data"`
 }
 
 func (m *Msg) Send(ws *websocket.Conn) {
-  if err := websocket.JSON.Send(ws, &msg); err != nil {
-    log.Println("send err", err)
-  }
+	if err := websocket.JSON.Send(ws, &m); err != nil {
+		log.Println("send err", err)
+	}
 }
 
 type Room struct {
-  Voters  map[*Voter]bool
-  Voting  bool
-  Ticket  string
-  Results Msg
-  done    chan bool
+	Guid    string
+	Voters  map[*Voter]bool
+	Voting  bool
+	Ticket  string
+	Results Msg
+	done    chan bool
 }
 
 func CreateRoom() Room {
-  uuid, err := guid.Generate()
+	uuid, err := guid.Generate()
 
-  if err != nil {
-    log.Println("error creating guid", err)
-  }
+	if err != nil {
+		log.Println("error creating guid", err)
+	}
 
-  return Room{
-    Guid:    uuid,
-    Voters:  make([]*Voter, 10),
-    Results: Msg{Route: "results", Data: make(map[string]string)},
-    Voting:  false,
-    Ticket:  "",
-    done:    make(chan bool),
-  }
+	return Room{
+		Guid:    uuid,
+		Voters:  make(map[*Voter]bool, 10),
+		Results: Msg{Route: "results", Data: make(map[string]string)},
+		Voting:  false,
+		Ticket:  "",
+		done:    make(chan bool),
+	}
 }
 
 var party = &EstimationParty{}
 
-func (party *EstimationParty) CastVote(voter *Voter, vote Vote) {
-  // handle string <-> int conversion
-  i, _ := strconv.Atoi(party.Results.Data[vote.Points])
-  party.Results.Data[vote.Points] = strconv.Itoa(i + 1)
-  voter.Voted = true
+func (r *Room) CastVote(voter *Voter, vote Vote) {
+	// handle string <-> int conversion
+	i, _ := strconv.Atoi(r.Results.Data[vote.Points])
+	r.Results.Data[vote.Points] = strconv.Itoa(i + 1)
+	voter.Voted = true
 }
 
-func (party *EstimationParty) RemoveVoter(v *Voter) {
-  d
-  i := party.FindVoter(v)
-  // TODO: figure out how this works https://code.google.com/p/go-wiki/wiki/SliceTricks
-  party.Voters = append(party.Voters[:i], party.Voters[i+1:]...)
+func (r *Room) RemoveVoter(v *Voter) {
+	delete(r.Voters, v)
 }
 
-func (party *EstimationParty) CheckVoting() {
-  log.Println("CheckVoting called")
-  votes := 0
-  voters := 0
-  for _, voter := range party.Voters {
-    if voter != nil && voter.CanVote {
-      voters += 1
-      if voter.Voted == true {
-        votes += 1
-      }
-    }
-  }
-  if votes == voters {
-    log.Println("Ending estimation early")
-    party.done <- true
-  }
+func (r *Room) CheckVoting() {
+	log.Println("CheckVoting called")
+	votes := 0
+	voters := 0
+	for voter, _ := range r.Voters {
+		if voter.CanVote == true {
+			voters += 1
+			if voter.Voted == true {
+				votes += 1
+			}
+		}
+	}
+	if votes == voters {
+		log.Println("Ending estimation early")
+		r.done <- true
+	}
 }
 
-func (party *EstimationParty) SendResults() {
-  log.Println("SendResults called to voters")
-  for _, voter := range party.Voters {
-    if voter != nil {
-      SendMsg(voter.ws, party.Results)
-      voter.Voted = false
-      voter.CanVote = false
-    }
-  }
-  party.Reset()
-  log.Println("Reset Party, waiting to start estimating again")
+func (r *Room) SendResults() {
+	log.Println("SendResults called to voters")
+	for voter, _ := range r.Voters {
+		r.Results.Send(voter.ws)
+		voter.Voted = false
+		voter.CanVote = false
+	}
+	r.Reset()
+	log.Println("Reset Party, waiting to start estimating again")
 }
 
-func (party *EstimationParty) MakeVoter(ws *websocket.Conn) Voter {
-  return Voter{
-    ws:      ws,
-    Voted:   false,
-    CanVote: false,
-    quit:    make(chan bool),
-  }
+func (r *Room) MakeVoter(ws *websocket.Conn) *Voter {
+	return &Voter{
+		ws:      ws,
+		Voted:   false,
+		CanVote: false,
+		quit:    make(chan bool),
+	}
 }
 
-func (party *EstimationParty) FindVoter(v *Voter) int {
-  for i, val := range party.Voters {
-    if v == val {
-      return i
-    }
-  }
-  return -1
+func (r *Room) StartVoting() {
+	log.Println("StartVoting called")
+	r.Voting = true
+
+	for voter, _ := range r.Voters {
+		voter.CanVote = true
+		msg := &Msg{
+			Route: "start",
+			Data:  map[string]string{"ticket": r.Ticket, "voting": "true"},
+		}
+		msg.Send(voter.ws)
+	}
+
+	for {
+		select {
+		case <-r.done:
+			log.Println("Estimation done early!")
+			r.Voting = false
+			r.SendResults()
+			return
+		case <-time.After(5 * time.Minute):
+			log.Println("Estimation Timed Out!")
+			r.Voting = false
+			r.SendResults()
+			return
+		}
+	}
 }
 
-func (party *EstimationParty) StartVoting() {
-  log.Println("StartVoting called")
-  party.Voting = true
-
-  for _, voter := range party.Voters {
-    if voter != nil {
-      voter.CanVote = true
-      SendMsg(voter.ws, Msg{
-        Route: "start",
-        Data:  map[string]string{"ticket": party.Ticket, "voting": "true"},
-      })
-    }
-  }
-
-  for {
-    select {
-    case <-party.done:
-      log.Println("Estimation done early!")
-      party.Voting = false
-      party.SendResults()
-      return
-    case <-time.After(5 * time.Minute):
-      log.Println("Estimation Timed Out!")
-      party.Voting = false
-      party.SendResults()
-      return
-    }
-  }
-}
-
-func (party *EstimationParty) Reset() {
-  party.Results = Msg{Route: "results", Data: make(map[string]string)}
-  party.Ticket = ""
+func (r *Room) Reset() {
+	r.Results = Msg{Route: "results", Data: make(map[string]string)}
+	r.Ticket = ""
 }

@@ -17,7 +17,7 @@ type Voter struct {
 	quit    chan bool
 }
 
-func (v *Voter) Receive() {
+func (r *Room) Receive(v *Voter) {
 	var msg Msg
 
 	for {
@@ -33,13 +33,13 @@ func (v *Voter) Receive() {
 		case "vote":
 			var vote Vote
 			vote = Vote{msg.Data["points"]}
-			if party.Voting == true && v.Voted == false && v.CanVote {
-				party.CastVote(v, vote)
-				party.CheckVoting()
+			if r.Voting == true && v.Voted == false && v.CanVote {
+				r.CastVote(v, vote)
+				r.CheckVoting()
 			}
 		case "start":
-			party.Ticket = msg.Data["ticket"]
-			go party.StartVoting()
+			r.Ticket = msg.Data["ticket"]
+			go r.StartVoting()
 		default:
 			log.Println("unknown route", msg.Route)
 		}

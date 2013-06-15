@@ -33,12 +33,13 @@ func roomHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func ExistingRoom(name string) {
+func ExistingRoom(name string) string {
+	return name
 	// check if the room is in map of existing rooms
 }
 
-func FindRoom(ws *websocket.Conn) {
-
+func FindRoom(ws *websocket.Conn) Room {
+	return Room{}
 }
 
 func WebsocketConnect(ws *websocket.Conn) {
@@ -48,10 +49,10 @@ func WebsocketConnect(ws *websocket.Conn) {
 	room := FindRoom(ws)
 
 	// make a new voter
-	voter := party.MakeVoter(ws)
-	room.Voters[&voter] = true
+	voter := room.MakeVoter(ws)
+	room.Voters[voter] = true
 
-	go voter.Receive()
+	go room.Receive(voter)
 	<-voter.quit
 	delete(room.Voters, voter)
 	log.Println("socket disconnected")
