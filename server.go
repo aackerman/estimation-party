@@ -18,7 +18,7 @@ func index(w http.ResponseWriter, r *http.Request) {
 	if strings.Contains(r.URL.Path, ".") {
 		mux.ServeHTTP(w, r)
 	} else {
-		indextpl.Execute(w, r.URL.Host)
+		indextpl.Execute(w, "")
 	}
 }
 
@@ -41,20 +41,38 @@ func ExistingRoom(name string) string {
 	// check if the room is in map of existing rooms
 }
 
-func FindRoom(guid string) *Room {
+func FindRoomByGuid(guid string) *Room {
 	for room, _ := range EstimationParty.Rooms {
 		if room.Guid == guid {
 			return room
 		}
 	}
-	return &Room{}
+	return &Room{
+		Voters: make(map[*Voter]bool),
+		Results: Msg{
+			Route: "results",
+			Data:  make(map[string]string),
+		},
+		done: make(chan bool),
+	}
+}
+
+func FindRoomBySocket(ws *websocket.Conn) *Room {
+	return &Room{
+		Voters: make(map[*Voter]bool),
+		Results: Msg{
+			Route: "results",
+			Data:  make(map[string]string),
+		},
+		done: make(chan bool),
+	}
 }
 
 func WebsocketConnect(ws *websocket.Conn) {
 	log.Println("socket connected")
 	defer ws.Close()
 
-	room := FindRoom(ws)
+	room := FindRoomBySocket(ws)
 
 	// make a new voter
 	voter := room.MakeVoter(ws)
